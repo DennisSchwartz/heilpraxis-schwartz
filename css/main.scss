@@ -1,0 +1,294 @@
+---
+---
+
+////////////////////////////////////////////////////////////
+//////////////////////// Functions /////////////////////////
+////////////////////////////////////////////////////////////
+
+/// Gets a value from a map.
+/// @author Hugo Giraudel
+/// @param {map} $map Map.
+/// @param {string} $keys Key(s).
+/// @return {string} Value.
+@function val($map, $keys...) {
+
+  @each $key in $keys {
+    $map: map-get($map, $key);
+  }
+
+  @return $map;
+
+}
+
+/// Gets a palette value.
+/// @param {string} $keys Key(s).
+/// @return {string} Value.
+@function _palette($keys...) {
+  @return val($palette, $keys...);
+}
+
+/// Gets a font value.
+/// @param {string} $keys Key(s).
+/// @return {string} Value.
+@function _font($keys...) {
+  @return val($font, $keys...);
+}
+
+/// Replaces a substring within another string.
+/// @author Hugo Giraudel
+/// @param {string} $string String.
+/// @param {string} $search Substring.
+/// @param {string} $replace Replacement.
+/// @return {string} Updated string.
+@function str-replace($string, $search, $replace: '') {
+
+  $index: str-index($string, $search);
+
+  @if $index {
+    @return str-slice($string, 1, $index - 1) + $replace + str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+  }
+
+  @return $string;
+
+}
+
+/// Replaces a substring within each string in a list.
+/// @param {list} $strings List of strings.
+/// @param {string} $search Substring.
+/// @param {string} $replace Replacement.
+/// @return {list} Updated list of strings.
+@function str-replace-all($strings, $search, $replace: '') {
+
+  @each $string in $strings {
+    $strings: set-nth($strings, index($strings, $string), str-replace($string, $search, $replace));
+  }
+
+  @return $strings;
+
+}
+
+
+////////////////////////////////////////////////////////////
+///////////////////// Mixins ////////////////////////////
+////////////////////////////////////////////////////////////
+
+// Prefixes
+$vendor-prefixes: (
+        '-moz-',
+        '-webkit-',
+        '-o-',
+        ''
+);
+
+// Properties
+$vendor-properties: (
+        'transform',
+        'background-size',
+        'box-shadow',
+        'border-radius',
+        'animation-fill-mode',
+        'animation-duration',
+        'animation-name',
+        'border-radius',
+        'border-radius-top-left',
+        'border-radius-top-right'
+);
+
+/// Values that should be vendorized.
+/// @var {list}
+$vendor-values: (
+        'flex',
+        'linear-gradient',
+        'radial-gradient',
+        'transform'
+);
+
+
+/// Vendorizes a declaration's property and/or value(s).
+/// @param {string} $property Property.
+/// @param {mixed} $value String/list of value(s).
+@mixin vendor($property, $value) {
+
+  // Determine if property should expand.
+  $expandProperty: index($vendor-properties, $property);
+
+  // Determine if value should expand (and if so, add '-prefix-' placeholder).
+  $expandValue: false;
+
+  @each $x in $value {
+    @each $y in $vendor-values {
+      @if $y == str-slice($x, 1, str-length($y)) {
+
+        $value: set-nth($value, index($value, $x), '-prefix-' + $x);
+        $expandValue: true;
+
+      }
+    }
+  }
+
+  // Expand property?
+  @if $expandProperty {
+    @each $vendor in $vendor-prefixes {
+      #{$vendor}#{$property}: #{str-replace-all($value, '-prefix-', $vendor)};
+    }
+  }
+
+    // Expand just the value?
+  @elseif $expandValue {
+    @each $vendor in $vendor-prefixes {
+      #{$property}: #{str-replace-all($value, '-prefix-', $vendor)};
+    }
+  }
+
+    // Neither? Treat them as a normal declaration.
+  @else {
+    #{$property}: #{$value};
+  }
+}
+
+////////////////////////////////////////////////////////////
+///////////////////// Variables ////////////////////////////
+////////////////////////////////////////////////////////////
+
+// Breakpoints.
+$breakpoints: (
+        xlarge:				'max-width: 1680px',
+        large:				'max-width: 1200px',
+        medium:				'max-width: 992px',
+        small:				'max-width: 768px',
+        xsmall:				'max-width: 480px'
+);
+
+// Duration.
+$duration: (
+        transitions:		0.2s,
+        menu:				0.5s,
+        fadein:				3s
+);
+
+// Size.
+$size: (
+        element-height:		2.75em,
+        element-margin:		2em,
+        letter-spacing:		0.075em,
+        letter-spacing-alt:	0.225em
+);
+
+// Font.
+$font: (
+        family:			('Open Sans', Helvetica, sans-serif),
+        family-fixed:		('Courier New', monospace),
+        weight:			300,
+        weight-bold:		600,
+        weight-extrabold:	800
+);
+
+$palette: (
+        fg: #fff,
+        fg-light: #E5E5E5,
+        fg-medium: #666,
+        primary: rgba(152,192,155,1),
+        primary-layer: rgba(152,192,155,0.6),
+        primary-vl: rgba(231,239,232,1),
+        primary-l: rgba(194,217,195,1),
+        primary-s: rgba(109,164,112,1),
+        primary-vs: rgba( 71,137, 75,1),
+        secondary: rgba(117,146,147,1),
+        secondary-layer: rgba(117,146,147,0.6),
+        secondary-vl: rgba(218,225,225,1),
+        secondary-l: rgba(165,183,184,1),
+        secondary-s: rgba( 84,124,126,1),
+        secondary-s-layer: rgba( 84,124,126,0.6),
+        secondary-vs: rgba( 55,103,106,1),
+        tertiary: rgba(211,227,180,1),
+        tertiary-vl: rgba(247,250,242,1),
+        tertiary-l: rgba(234,243,217,1),
+        tertiary-s: rgba(171,194,129,1),
+        tertiary-vs: rgba(135,163, 84,1),
+        text-strong: #333333,
+        shadow: rgba(0, 0, 0, 0.1)
+);
+
+$border-radius: 10px;
+
+////////////////////////////////////////////////////////////
+/////////////////////// Styles /////////////////////////////
+////////////////////////////////////////////////////////////
+
+body {
+  color: _palette(text-strong);
+  background-color: _palette(fg);
+  font-family: _font(family);
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: _font(weight);
+  color: _palette(text-strong);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.landing-page {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+
+  .intro {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .about {
+    background-color: _palette(primary-vs);
+    min-height: 100vh;
+  }
+
+}
+
+
+/* INTRO */
+//.intro {
+//  color: _palette(fg);
+//  background-image: url('../assets/images/bg-intro.png');
+//  background-repeat: no-repeat;
+//  background-position: center;
+//  @include vendor('background-size', 'cover');
+//
+//  .layer {
+//    background-color: _palette(primary-layer);
+//    /* IE 8 OPACITY */
+//    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=90)";
+//  }
+//
+//  .index-icon {
+//    width: 300px;
+//    height: 300px;
+//    position: relative;
+//    padding: 100px;
+//    background-image: url("../assets/images/ele-neu.jpg");
+//    background-repeat: no-repeat;
+//    @include vendor('border-radius', '150px');
+//    @include vendor('box-shadow', '0 0 8px ' + _palette(shadow));
+//  }
+//}
+
+footer {
+  background-color: _palette(secondary-vs);
+  padding: 0.5rem;
+}
+
+///* Mixins */
+//@mixin vendor($attr, $val) {
+//  -webkit-#{$attr}: $val;
+//  -moz-#{$attr}: $val;
+//  -ms-#{$attr}: $val;
+//  -o-#{$attr}: $val;
+//  #{$attr}: $val;
+//}
